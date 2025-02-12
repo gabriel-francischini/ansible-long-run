@@ -6,7 +6,7 @@ from __future__ import (absolute_import, division, print_function)
 __metaclass__ = type
 
 DOCUMENTATION = '''
-    callback: default
+    callback: long_run_stdout
     type: stdout
     short_description: default Ansible screen output
     version_added: historical
@@ -48,7 +48,7 @@ class CallbackModule(CallbackBase):
 
     CALLBACK_VERSION = 2.0
     CALLBACK_TYPE = 'stdout'
-    CALLBACK_NAME = 'default'
+    CALLBACK_NAME = 'long_run_stdout'
 
     def __init__(self):
 
