@@ -77,6 +77,41 @@
       long_run_raw_with_banner: no
       long_run_raw_show_changed: no
 
+
+  - copy:
+      src: files/terminal-colors
+      dest: /somedir/terminal-colors
+      mode: '777'
+    tags: [print_action]
+
+  - include_role:
+      name: long_run
+    vars:
+      long_run_title: "test color output with raw output and banner"
+      long_run_output_path: "/tmp/somedir"
+      long_run_output_file: "task.log"
+      long_run_path: "/somedir"
+      long_run_cmd: "./terminal-colors"
+      long_run_timeout: 600
+      long_run_poll: 1
+
+  - copy:
+      src: files/truecolor-test
+      dest: /somedir/truecolor-test
+      mode: '777'
+    tags: [print_action]
+
+  - include_role:
+      name: long_run
+    vars:
+      long_run_title: "test truecolors with raw output and banner"
+      long_run_output_path: "/tmp/somedir"
+      long_run_output_file: "task.log"
+      long_run_path: "/somedir"
+      long_run_cmd: "./truecolor-test"
+      long_run_timeout: 600
+      long_run_poll: 1
+
   - debug:
       msg: "Play ended"
     tags: [print_action]
