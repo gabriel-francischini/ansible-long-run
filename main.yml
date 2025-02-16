@@ -14,7 +14,7 @@
   - copy:
       src: files/task.sh
       dest: /somedir/task
-      mode: u=+x
+      mode: '777'
     tags: [print_action]
 
   - include_role: 
