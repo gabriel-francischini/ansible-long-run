@@ -20,13 +20,62 @@
   - include_role: 
       name: long_run
     vars:
-      long_run_title: "my custom task"
+      long_run_title: "my custom task with raw output, banner and show_changed"
       long_run_output_path: "/tmp/somedir"
       long_run_output_file: "task.log"
       long_run_path: "/somedir"
       long_run_cmd: "./task"
       long_run_timeout: 600
       long_run_poll: 1
+      long_run_raw_output: yes
+      long_run_raw_with_banner: yes
+      long_run_raw_show_changed: yes
+
+  - include_role:
+      name: long_run
+    vars:
+      long_run_title: "my custom task with raw output, banner and no show_changed"
+      long_run_output_path: "/tmp/somedir"
+      long_run_output_file: "task.log"
+      long_run_path: "/somedir"
+      long_run_cmd: "./task"
+      long_run_timeout: 600
+      long_run_poll: 1
+      long_run_raw_output: yes
+      long_run_raw_with_banner: yes
+      long_run_raw_show_changed: no
+
+  - debug:
+      msg: "what follows is a streamlined raw output (raw output, no banner, no show_changed)"
+    tags: [print_action]
+
+  - include_role:
+      name: long_run
+    vars:
+      long_run_title: "my custom task with raw output, no banner and no show_changed"
+      long_run_output_path: "/tmp/somedir"
+      long_run_output_file: "task.log"
+      long_run_path: "/somedir"
+      long_run_cmd: "./task"
+      long_run_timeout: 600
+      long_run_poll: 1
+      long_run_raw_output: yes
+      long_run_raw_with_banner: no
+      long_run_raw_show_changed: no
+
+  - include_role:
+      name: long_run
+    vars:
+      long_run_title: "my custom task without raw output"
+      long_run_output_path: "/tmp/somedir"
+      long_run_output_file: "task.log"
+      long_run_path: "/somedir"
+      long_run_cmd: "./task"
+      long_run_timeout: 600
+      long_run_poll: 1
+      long_run_raw_output: no
+      long_run_raw_with_banner: no
+      long_run_raw_show_changed: no
 
   - debug:
       msg: "Play ended"
