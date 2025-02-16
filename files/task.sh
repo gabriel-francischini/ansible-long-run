@@ -12,7 +12,7 @@ arr=(
     "sunt in culpa qui officia deserunt mollit anim id est laborum."
 )
 
-for i in {1..20}; do
+for i in {1..5}; do
     for s in "${arr[@]}"; do
         echo "$(date '+%F %X') - $i - $s"
     done
