@@ -1,5 +1,5 @@
 - name: Play 01 - Execute the long running task and display output in real-time
-  hosts: main
+  hosts: all
   tasks:
   - file:
       path: "/somedir"
