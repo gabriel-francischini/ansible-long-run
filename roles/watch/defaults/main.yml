@@ -13,3 +13,9 @@ watch_poll: 1
 watch_timeout: 1000
 
 watch_count: 0
+
+watch_raw_output: no
+
+watch_raw_with_banner: no
+
+watch_raw_show_changed: no

@@ -6,3 +6,6 @@ long_run_path: '/bin'
 long_run_cmd: 'echo "no command"'
 long_run_timeout: 3600
 long_run_poll: 5
+long_run_raw_output: yes
+long_run_raw_with_banner: yes
+long_run_raw_show_changed: no

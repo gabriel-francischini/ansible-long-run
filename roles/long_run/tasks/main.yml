@@ -37,6 +37,8 @@
     watch_job: 'long_run_register'
     watch_timeout: "{{ long_run_timeout | int }}"
     watch_poll: "{{ long_run_poll | int }}"
+    watch_raw_output: "{{ long_run_raw_output }}"
+
 
 - name: '[{{ long_run_title }}]'
   debug: 

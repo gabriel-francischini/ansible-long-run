@@ -22,7 +22,9 @@ from ansible import constants as C
 from ansible import context
 from ansible.playbook.task_include import TaskInclude
 from ansible.plugins.callback import CallbackBase
+from ansible.template import Templar
 from ansible.utils.color import colorize, hostcolor
+import os
 
 
 # These values use ansible.constants for historical reasons, mostly to allow
@@ -103,6 +105,25 @@ class CallbackModule(CallbackBase):
         if isinstance(result._task, TaskInclude):
             return
         elif result._result.get('changed', False):
+            _task = result._task
+            _role = result._task._role
+            role_name = _role and _role.get_name(include_role_fqcn=False)
+
+            if role_name in {'long_run', 'watch'}:
+                all_vars = self.vm.get_vars(play=self._play, task=result._task, host=result._host)
+                templar = Templar(loader=None, variables=all_vars)
+
+                long_run_raw_output = templar.template(
+                    all_vars.get('long_run_raw_output', None)
+                    or all_vars.get('watch_raw_output', None)
+                ) or False
+                long_run_raw_show_changed = templar.template(
+                    all_vars.get('long_run_raw_show_changed', None)
+                    or all_vars.get('watch_raw_show_changed', None)
+                ) or False
+
+                if long_run_raw_output and not long_run_raw_show_changed:
+                    return
             if self._last_task_banner != result._task._uuid:
                 self._print_task_banner(result._task)
 
@@ -112,6 +133,44 @@ class CallbackModule(CallbackBase):
                 msg = "changed: [%s]" % result._host.get_name()
             color = C.COLOR_CHANGED
         else:
+            _task = result._task
+            _role = result._task._role
+            role_name = _role and _role.get_name(include_role_fqcn=False)
+            if role_name in {'long_run', 'watch'}:
+                all_vars = self.vm.get_vars(play=self._play, task=result._task, host=result._host)
+                templar = Templar(loader=None, variables=all_vars)
+
+                # Evaluates/expands jinja variable definitions to get actual
+                # values for long_run_raw_output, falling back to
+                # the value of watch_raw_output
+                long_run_raw_output = templar.template(
+                    all_vars.get('long_run_raw_output', None)
+                    or all_vars.get('watch_raw_output', None)
+                ) or False
+                long_run_raw_with_banner = templar.template(
+                    all_vars.get('long_run_raw_with_banner', None)
+                    or all_vars.get('watch_raw_with_banner', None)
+                ) or False
+
+                if (_task.action == 'debug'
+                    and ' lines captured' in str(_task._name)
+                    and long_run_raw_output is True):
+                    watch_output = all_vars.get('watch_output',[])
+
+                    # a different fallback method of getting watch_output
+                    if not watch_output:
+                        global_vars = self.vm.get_vars(task=_task)
+                        host_vars = global_vars.get('hostvars')
+                        vars = host_vars[result._host.name]
+                        watch_output = vars.get('watch_output',[])
+                    msg = os.linesep.join(watch_output)
+
+                    if long_run_raw_with_banner:
+                        self._print_task_banner(result._task)
+                    if msg:
+                        print(msg)
+                if long_run_raw_output is True:
+                    return
             if not self.display_ok_hosts:
                 if 'print_action' not in result._task.tags:
                     return
@@ -240,6 +299,7 @@ class CallbackModule(CallbackBase):
             msg = u"PLAY [%s]" % name
 
         self._play = play
+        self.vm = play.get_variable_manager()
 
         self._display.banner(msg)
 
