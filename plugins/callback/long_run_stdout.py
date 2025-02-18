@@ -52,6 +52,111 @@ class CallbackModule(CallbackBase):
     CALLBACK_TYPE = 'stdout'
     CALLBACK_NAME = 'long_run_stdout'
 
+    def _get_display_skipped_hosts(self, result=None, task=None):
+        if result is not None:
+            task = result._task
+        _role = task._role
+
+        role_name = _role and _role.get_name(include_role_fqcn=False)
+
+        task_name = task.get_name()
+        if (role_name not in {'long_run', 'watch'}
+            and not any(_ in task_name for _ in {'long_run', 'watch'})):
+            return self.display_skipped_hosts
+
+        if result is not None:
+            all_vars = self.vm.get_vars(play=self._play, task=result._task, host=result._host)
+        else:
+            all_vars = self.vm.get_vars(play=self._play, task=task)
+        templar = Templar(loader=None, variables=all_vars)
+
+        global_vars = self.vm.get_vars(task=task)
+
+        if result is not None:
+            host_vars = global_vars.get('hostvars', {}).get(result._host.name, {})
+        else:
+            host_vars = {}
+            if len(global_vars.get('hostvars', {})) > 0:
+                host_vars = global_vars.get('hostvars', {}).values().__iter__().__next__()
+
+        ansible_env = host_vars.get('ansible_env', {})
+        facts_env = host_vars.get('ansible_facts', {}).get('env', {})
+        vars_env = all_vars.get('env', {})
+
+        from_vars = templar.template(
+            all_vars.get('display_skipped_hosts', None)
+        )
+        if from_vars is None:
+            from_vars = templar.template(
+                all_vars.get('ANSIBLE_DISPLAY_SKIPPED_HOSTS', None)
+            )
+
+        sourced = []
+        for source in [ansible_env, facts_env, vars_env]:
+            for spelling in ['ANSIBLE_DISPLAY_SKIPPED_HOSTS', 'display_skipped_hosts']:
+                lookup = source.get(spelling, None)
+                if lookup is not None:
+                    sourced.append(lookup)
+        sourced += [from_vars] if from_vars is not None else []
+
+        display_skipped_hosts = self.display_skipped_hosts
+        for value in sourced:
+            if value is not None:
+                display_skipped_hosts = value
+        return display_skipped_hosts
+
+    def _get_display_ok_hosts(self, result=None, task=None):
+        if result is not None:
+            task = result._task
+        _role = task._role
+        role_name = _role and _role.get_name(include_role_fqcn=False)
+
+        task_name = task.get_name()
+        if (role_name not in {'long_run', 'watch'}
+            and not any(_ in task_name for _ in {'long_run', 'watch'})):
+            return self.display_ok_hosts
+
+        if result is not None:
+            all_vars = self.vm.get_vars(play=self._play, task=result._task, host=result._host)
+        elif task is not None:
+            all_vars = self.vm.get_vars(play=self._play, task=task)
+        templar = Templar(loader=None, variables=all_vars)
+
+        global_vars = self.vm.get_vars(task=task)
+
+        if result is not None:
+            host_vars = global_vars.get('hostvars', {}).get(result._host.name, {})
+        else:
+            host_vars = {}
+            if len(global_vars.get('hostvars', {})) > 0:
+                host_vars = global_vars.get('hostvars', {}).values().__iter__().__next__()
+
+        ansible_env = host_vars.get('ansible_env', {})
+        facts_env = host_vars.get('ansible_facts', {}).get('env', {})
+        vars_env = all_vars.get('env', {})
+
+        from_vars = templar.template(
+            all_vars.get('display_ok_hosts', None)
+        )
+        if from_vars is None:
+            from_vars = templar.template(
+                all_vars.get('ANSIBLE_DISPLAY_OK_HOSTS', None)
+            )
+
+        sourced = []
+        for source in [ansible_env, facts_env, vars_env]:
+            for spelling in ['ANSIBLE_DISPLAY_OK_HOSTS', 'display_ok_hosts']:
+                lookup = source.get(spelling, None)
+                if lookup is not None:
+                    sourced.append(lookup)
+        sourced += [from_vars] if from_vars is not None else []
+
+        display_ok_hosts = self.display_ok_hosts
+        for value in sourced:
+            if value is not None:
+                display_ok_hosts = value
+        return display_ok_hosts
+
     def __init__(self):
 
         self._play = None
@@ -171,7 +276,7 @@ class CallbackModule(CallbackBase):
                         print(msg)
                 if long_run_raw_output is True:
                     return
-            if not self.display_ok_hosts:
+            if not self._get_display_ok_hosts(result):
                 if 'print_action' not in result._task.tags:
                     return
 
@@ -197,7 +302,7 @@ class CallbackModule(CallbackBase):
 
     def v2_runner_on_skipped(self, result):
 
-        if self.display_skipped_hosts:
+        if self._get_display_skipped_hosts(result):
 
             self._clean_results(result._result, result._task.action)
 
@@ -249,7 +354,7 @@ class CallbackModule(CallbackBase):
             self._last_task_name = task.get_name().strip()
 
             # Display the task banner immediately if we're not doing any filtering based on task result
-            if self.display_skipped_hosts and self.display_ok_hosts:
+            if self._get_display_skipped_hosts(task=task) and self._get_display_ok_hosts(task=task):
                 self._print_task_banner(task)
 
     def _print_task_banner(self, task):
@@ -332,7 +437,7 @@ class CallbackModule(CallbackBase):
             msg = 'changed'
             color = C.COLOR_CHANGED
         else:
-            if not self.display_ok_hosts:
+            if not self._get_display_ok_hosts(result):
                 if 'print_action' not in result._task.tags:
                     return
 
@@ -371,7 +476,7 @@ class CallbackModule(CallbackBase):
         self._display.display(msg + " (item=%s) => %s" % (self._get_item_label(result._result), self._dump_results(result._result)), color=C.COLOR_ERROR)
 
     def v2_runner_item_on_skipped(self, result):
-        if self.display_skipped_hosts:
+        if self._get_display_skipped_hosts(result):
             if self._last_task_banner != result._task._uuid:
                 self._print_task_banner(result._task)
 
@@ -382,7 +487,7 @@ class CallbackModule(CallbackBase):
             self._display.display(msg, color=C.COLOR_SKIP)
 
     def v2_playbook_on_include(self, included_file):
-        if self.display_ok_hosts:
+        if self._get_display_ok_hosts(task=included_file._task):
             msg = 'included: %s for %s' % (included_file._filename, ", ".join([h.name for h in included_file._hosts]))
             if 'item' in included_file._args:
                 msg += " => (item=%s)" % (self._get_item_label(included_file._args),)

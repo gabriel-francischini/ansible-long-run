@@ -30,6 +30,9 @@
       long_run_raw_output: yes
       long_run_raw_with_banner: yes
       long_run_raw_show_changed: yes
+      display_ok_hosts: no
+      display_skipped_hosts: no
+
 
   - include_role:
       name: long_run
@@ -44,6 +47,9 @@
       long_run_raw_output: yes
       long_run_raw_with_banner: yes
       long_run_raw_show_changed: no
+      display_ok_hosts: no
+      display_skipped_hosts: no
+
 
   - debug:
       msg: "what follows is a streamlined raw output (raw output, no banner, no show_changed)"
@@ -62,6 +68,9 @@
       long_run_raw_output: yes
       long_run_raw_with_banner: no
       long_run_raw_show_changed: no
+      display_ok_hosts: no
+      display_skipped_hosts: no
+
 
   - include_role:
       name: long_run
@@ -76,6 +85,10 @@
       long_run_raw_output: no
       long_run_raw_with_banner: no
       long_run_raw_show_changed: no
+      display_ok_hosts: no
+      display_skipped_hosts: no
+
+
 
 
   - copy:
@@ -94,6 +107,10 @@
       long_run_cmd: "./terminal-colors"
       long_run_timeout: 600
       long_run_poll: 1
+      display_ok_hosts: no
+      display_skipped_hosts: no
+
+
 
   - copy:
       src: files/truecolor-test
@@ -111,6 +128,10 @@
       long_run_cmd: "./truecolor-test"
       long_run_timeout: 600
       long_run_poll: 1
+      display_ok_hosts: no
+      display_skipped_hosts: no
+
+
 
   - debug:
       msg: "Play ended"
