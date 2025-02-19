@@ -52,7 +52,9 @@ class CallbackModule(CallbackBase):
     CALLBACK_TYPE = 'stdout'
     CALLBACK_NAME = 'long_run_stdout'
 
-    def _get_display_skipped_hosts(self, result=None, task=None):
+    def _get_display_var_with_custom_override(self, default_constant_value,
+                                              overriding_var_names,
+                                              result=None, task=None):
         if result is not None:
             task = result._task
         _role = task._role
@@ -62,7 +64,7 @@ class CallbackModule(CallbackBase):
         task_name = task.get_name()
         if (role_name not in {'long_run', 'watch'}
             and not any(_ in task_name for _ in {'long_run', 'watch'})):
-            return self.display_skipped_hosts
+            return default_constant_value
 
         if result is not None:
             all_vars = self.vm.get_vars(play=self._play, task=result._task, host=result._host)
@@ -83,79 +85,42 @@ class CallbackModule(CallbackBase):
         facts_env = host_vars.get('ansible_facts', {}).get('env', {})
         vars_env = all_vars.get('env', {})
 
-        from_vars = templar.template(
-            all_vars.get('display_skipped_hosts', None)
-        )
-        if from_vars is None:
-            from_vars = templar.template(
-                all_vars.get('ANSIBLE_DISPLAY_SKIPPED_HOSTS', None)
-            )
+        from_vars = None
+        for var_name in overriding_var_names:
+            if from_vars is None:
+                from_vars = templar.template(
+                    all_vars.get(var_name, None)
+                )
 
         sourced = []
         for source in [ansible_env, facts_env, vars_env]:
-            for spelling in ['ANSIBLE_DISPLAY_SKIPPED_HOSTS', 'display_skipped_hosts']:
-                lookup = source.get(spelling, None)
+            for var_name in overriding_var_names:
+                lookup = source.get(var_name, None)
                 if lookup is not None:
                     sourced.append(lookup)
         sourced += [from_vars] if from_vars is not None else []
 
-        display_skipped_hosts = self.display_skipped_hosts
+        overriden_value = default_constant_value
         for value in sourced:
             if value is not None:
-                display_skipped_hosts = value
-        return display_skipped_hosts
+                overriden_value = value
+        return overriden_value
+
+    def _get_display_skipped_hosts(self, result=None, task=None):
+        return self._get_display_var_with_custom_override(
+            default_constant_value=self.display_skipped_hosts,
+            overriding_var_names=['ANSIBLE_DISPLAY_SKIPPED_HOSTS', 'display_skipped_hosts'],
+            result=result,
+            task=task
+        )
 
     def _get_display_ok_hosts(self, result=None, task=None):
-        if result is not None:
-            task = result._task
-        _role = task._role
-        role_name = _role and _role.get_name(include_role_fqcn=False)
-
-        task_name = task.get_name()
-        if (role_name not in {'long_run', 'watch'}
-            and not any(_ in task_name for _ in {'long_run', 'watch'})):
-            return self.display_ok_hosts
-
-        if result is not None:
-            all_vars = self.vm.get_vars(play=self._play, task=result._task, host=result._host)
-        elif task is not None:
-            all_vars = self.vm.get_vars(play=self._play, task=task)
-        templar = Templar(loader=None, variables=all_vars)
-
-        global_vars = self.vm.get_vars(task=task)
-
-        if result is not None:
-            host_vars = global_vars.get('hostvars', {}).get(result._host.name, {})
-        else:
-            host_vars = {}
-            if len(global_vars.get('hostvars', {})) > 0:
-                host_vars = global_vars.get('hostvars', {}).values().__iter__().__next__()
-
-        ansible_env = host_vars.get('ansible_env', {})
-        facts_env = host_vars.get('ansible_facts', {}).get('env', {})
-        vars_env = all_vars.get('env', {})
-
-        from_vars = templar.template(
-            all_vars.get('display_ok_hosts', None)
+        return self._get_display_var_with_custom_override(
+            default_constant_value=self.display_ok_hosts,
+            overriding_var_names=['ANSIBLE_DISPLAY_OK_HOSTS', 'display_ok_hosts'],
+            result=result,
+            task=task
         )
-        if from_vars is None:
-            from_vars = templar.template(
-                all_vars.get('ANSIBLE_DISPLAY_OK_HOSTS', None)
-            )
-
-        sourced = []
-        for source in [ansible_env, facts_env, vars_env]:
-            for spelling in ['ANSIBLE_DISPLAY_OK_HOSTS', 'display_ok_hosts']:
-                lookup = source.get(spelling, None)
-                if lookup is not None:
-                    sourced.append(lookup)
-        sourced += [from_vars] if from_vars is not None else []
-
-        display_ok_hosts = self.display_ok_hosts
-        for value in sourced:
-            if value is not None:
-                display_ok_hosts = value
-        return display_ok_hosts
 
     def __init__(self):
 
