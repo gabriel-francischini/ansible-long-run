@@ -9,3 +9,5 @@ long_run_poll: 1
 long_run_raw_output: yes
 long_run_raw_with_banner: yes
 long_run_raw_show_changed: no
+long_run_display_ok_hosts: no
+long_run_display_skipped_hosts: no

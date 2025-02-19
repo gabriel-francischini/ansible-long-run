@@ -30,8 +30,6 @@
       long_run_raw_output: yes
       long_run_raw_with_banner: yes
       long_run_raw_show_changed: yes
-      display_ok_hosts: no
-      display_skipped_hosts: no
 
 
   - include_role:
@@ -47,8 +45,6 @@
       long_run_raw_output: yes
       long_run_raw_with_banner: yes
       long_run_raw_show_changed: no
-      display_ok_hosts: no
-      display_skipped_hosts: no
 
 
   - debug:
@@ -68,8 +64,6 @@
       long_run_raw_output: yes
       long_run_raw_with_banner: no
       long_run_raw_show_changed: no
-      display_ok_hosts: no
-      display_skipped_hosts: no
 
 
   - include_role:
@@ -85,8 +79,6 @@
       long_run_raw_output: no
       long_run_raw_with_banner: no
       long_run_raw_show_changed: no
-      display_ok_hosts: no
-      display_skipped_hosts: no
 
 
 
@@ -107,8 +99,6 @@
       long_run_cmd: "./terminal-colors"
       long_run_timeout: 600
       long_run_poll: 1
-      display_ok_hosts: no
-      display_skipped_hosts: no
 
 
 
@@ -128,8 +118,6 @@
       long_run_cmd: "./truecolor-test"
       long_run_timeout: 600
       long_run_poll: 1
-      display_ok_hosts: no
-      display_skipped_hosts: no
 
 
 

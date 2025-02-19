@@ -23,6 +23,8 @@ from ansible import context
 from ansible.playbook.task_include import TaskInclude
 from ansible.plugins.callback import CallbackBase
 from ansible.template import Templar
+from ansible.playbook.role.include import RoleInclude
+from ansible.playbook.role import Role
 from ansible.utils.color import colorize, hostcolor
 import os
 
@@ -92,8 +94,36 @@ class CallbackModule(CallbackBase):
                     all_vars.get(var_name, None)
                 )
 
+        role_defaults = None
+        if _role is not None:
+            role_defaults = _role.get_default_vars()
+        # If the type of task is something like
+        # IncludeRole(ansible.playbook.task_include.TaskInclude)
+        # then the role might not have been loaded yet, so we have to load it.
+        # That can happen inside ansible's `include_role`.
+        elif task is not None and hasattr(task, '_role_name'):
+            task_play = task._parent._play
+            task_play_vm = task_play.get_variable_manager()
+            ri = RoleInclude.load(task._role_name, play=task_play,
+                                  variable_manager=task_play_vm,
+                                  loader=None,
+                                  collection_list=task.collections)
+            ri.vars |= task.vars
+            task_templar = Templar(loader=None, variables=task_play_vm)
+            task_from_files = task_templar.template(task._from_files)
+            actual_role = Role.load(ri, task_play, parent_role=task._parent_role,
+                                    from_files=task_from_files,
+                                    from_include=True,
+                                    validate=task.rolespec_validate,
+                                    public=task.public,
+                                    static=task.statically_loaded)
+            available_variables = actual_role.get_default_vars()
+            role_defaults = actual_role.get_default_vars()
+        if role_defaults is None:
+            role_defaults = {}
+
         sourced = []
-        for source in [ansible_env, facts_env, vars_env]:
+        for source in [ansible_env, facts_env, vars_env, role_defaults]:
             for var_name in overriding_var_names:
                 lookup = source.get(var_name, None)
                 if lookup is not None:
@@ -109,7 +139,7 @@ class CallbackModule(CallbackBase):
     def _get_display_skipped_hosts(self, result=None, task=None):
         return self._get_display_var_with_custom_override(
             default_constant_value=self.display_skipped_hosts,
-            overriding_var_names=['ANSIBLE_DISPLAY_SKIPPED_HOSTS', 'display_skipped_hosts'],
+            overriding_var_names=['ANSIBLE_DISPLAY_SKIPPED_HOSTS', 'display_skipped_hosts', 'long_run_display_skipped_hosts'],
             result=result,
             task=task
         )
@@ -117,7 +147,7 @@ class CallbackModule(CallbackBase):
     def _get_display_ok_hosts(self, result=None, task=None):
         return self._get_display_var_with_custom_override(
             default_constant_value=self.display_ok_hosts,
-            overriding_var_names=['ANSIBLE_DISPLAY_OK_HOSTS', 'display_ok_hosts'],
+            overriding_var_names=['ANSIBLE_DISPLAY_OK_HOSTS', 'display_ok_hosts', 'long_run_display_ok_hosts'],
             result=result,
             task=task
         )
